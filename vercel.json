@@ -9,7 +9,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app.js"
+      "dest": "/app.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "MONGODB_URI": "mongodb+srv://ruixiangxie06:WXHT8urtXxE0Ne73@cluster0.p2f72.mongodb.net/Stitch-Game?retryWrites=true&w=majority"
+  }
 }
