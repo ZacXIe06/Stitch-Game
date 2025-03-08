@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>图片功能测试</title>
+  <style>
+    .image-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .image-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 200px;
+    }
+    .image-card img {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>图片功能测试</h2>
+  
+  <div>
+    <h3>上传图片</h3>
+    <form id="uploadForm">
+      <input type="file" id="imageFile" accept="image/*" required>
+      <input type="text" id="title" placeholder="图片标题" required>
+      <input type="text" id="category" placeholder="类别" required>
+      <input type="text" id="tags" placeholder="标签（用逗号分隔）">
+      <button type="submit">上传</button>
+    </form>
+  </div>
+
+  <div>
+    <h3>图片列表</h3>
+    <button onclick="loadImages()">刷新列表</button>
+    <div id="imageList" class="image-container"></div>
+  </div>
+
+  <pre id="result"></pre>
+
+  <script>
+    // 上传图片
+    document.getElementById('uploadForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('image', document.getElementById('imageFile').files[0]);
+      formData.append('title', document.getElementById('title').value);
+      formData.append('category', document.getElementById('category').value);
+      formData.append('tags', document.getElementById('tags').value);
+
+      try {
+        const response = await fetch('/api/pictures', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: formData
+        });
+        
+        const result = await response.json();
+        document.getElementById('result').textContent = 
+          JSON.stringify(result, null, 2);
+        loadImages();
+      } catch (error) {
+        document.getElementById('result').textContent = 
+          'Error: ' + error.message;
+      }
+    };
+
+    // 加载图片列表
+    async function loadImages() {
+      try {
+        const response = await fetch('/api/pictures', {
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          }
+        });
+        
+        const images = await response.json();
+        const container = document.getElementById('imageList');
+        container.innerHTML = images.map(image => `
+          <div class="image-card">
+            <img src="${image.imageUrl}" alt="${image.title}">
+            <h4>${image.title}</h4>
+            <p>类别: ${image.category}</p>
+            <button onclick="deleteImage('${image._id}')">删除</button>
+          </div>
+        `).join('');
+      } catch (error) {
+        document.getElementById('result').textContent = 
+          'Error: ' + error.message;
+      }
+    }
+
+    // 删除图片
+    async function deleteImage(id) {
+      try {
+        const response = await fetch(`/api/pictures/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          }
+        });
+        
+        const result = await response.json();
+        document.getElementById('result').textContent = 
+          JSON.stringify(result, null, 2);
+        loadImages();
+      } catch (error) {
+        document.getElementById('result').textContent = 
+          'Error: ' + error.message;
+      }
+    }
+
+    // 页面加载时获取图片列表
+    loadImages();
+  </script>
+</body>
+</html> 

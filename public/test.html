@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>支付测试</title>
+</head>
+<body>
+  <h2>支付功能测试</h2>
+  
+  <div>
+    <h3>Apple Pay测试</h3>
+    <button onclick="testApplePay()">测试Apple Pay支付</button>
+  </div>
+
+  <div>
+    <h3>Google Play测试</h3>
+    <button onclick="testGooglePlay()">测试Google Play购买</button>
+  </div>
+
+  <pre id="result"></pre>
+
+  <script>
+    async function testApplePay() {
+      try {
+        const response = await fetch('/api/payments/apple-pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            amount: 100,
+            productType: 'coins',
+            paymentData: {
+              paymentToken: 'test_token'
+            }
+          })
+        });
+        
+        const result = await response.json();
+        document.getElementById('result').textContent = 
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById('result').textContent = 
+          'Error: ' + error.message;
+      }
+    }
+
+    async function testGooglePlay() {
+      try {
+        const response = await fetch('/api/payments/google-play/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            productId: 'com.yourapp.coins.100',
+            purchaseToken: 'test_token',
+            orderId: 'test_order'
+          })
+        });
+        
+        const result = await response.json();
+        document.getElementById('result').textContent = 
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById('result').textContent = 
+          'Error: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html> 
