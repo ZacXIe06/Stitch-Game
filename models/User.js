@@ -21,6 +21,28 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  // 个人资料信息
+  nickname: {
+    type: String,
+    trim: true
+  },
+  avatar: {
+    type: String,
+    default: '/images/default-avatar.png'
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: 200
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', ''],
+    default: ''
+  },
+  birthday: {
+    type: Date
+  },
   membership: {
     level: {
       type: String,
@@ -83,16 +105,34 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Picture'
   }],
+  completedCount: {
+    type: Number,
+    default: 0
+  },
+  registeredAt: {
+    type: Date,
+    default: Date.now
+  },
   createdAt: {
     type: Date,
     default: Date.now
   },
   updatedAt: Date,
-  lastLoginAt: Date,
+  lastLogin: {
+    type: Date
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  refreshToken: {
+    type: String
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
   }
 });
 

@@ -1,0 +1,255 @@
+<h2 class="mt-4 mb-4">横幅管理</h2>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <button id="add-banner-btn" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>添加新横幅
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>标题</th>
+                <th>图片</th>
+                <th>链接</th>
+                <th>状态</th>
+                <th>有效期</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="banners-list">
+            <!-- 横幅列表将通过JavaScript动态加载 -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 添加/编辑横幅模态框 -->
+<div class="modal fade" id="bannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bannerModalTitle">添加横幅</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bannerForm">
+                    <input type="hidden" id="banner-id">
+                    <div class="mb-3">
+                        <label for="banner-title" class="form-label">标题</label>
+                        <input type="text" class="form-control" id="banner-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="banner-image" class="form-label">图片</label>
+                        <input type="file" class="form-control" id="banner-image" accept="image/*">
+                        <div id="image-preview-container" class="mt-2 d-none">
+                            <img id="image-preview" class="preview-image" src="" alt="预览">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="banner-link" class="form-label">链接</label>
+                        <input type="text" class="form-control" id="banner-link">
+                    </div>
+                    <div class="mb-3">
+                        <label for="banner-status" class="form-label">状态</label>
+                        <select class="form-select" id="banner-status">
+                            <option value="active">启用</option>
+                            <option value="inactive">禁用</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="banner-start-date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="banner-start-date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="banner-end-date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="banner-end-date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="banner-position" class="form-label">显示位置</label>
+                        <input type="number" class="form-control" id="banner-position" min="1" value="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="save-banner-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 添加横幅按钮点击事件
+    document.getElementById('add-banner-btn').addEventListener('click', function() {
+        // 重置表单
+        document.getElementById('bannerForm').reset();
+        document.getElementById('banner-id').value = '';
+        document.getElementById('image-preview-container').classList.add('d-none');
+        
+        // 更新模态框标题
+        document.getElementById('bannerModalTitle').textContent = '添加横幅';
+        
+        // 显示模态框
+        const bannerModal = new bootstrap.Modal(document.getElementById('bannerModal'));
+        bannerModal.show();
+    });
+    
+    // 图片预览
+    document.getElementById('banner-image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-container').classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // 保存横幅按钮点击事件
+    document.getElementById('save-banner-btn').addEventListener('click', async function() {
+        const bannerId = document.getElementById('banner-id').value;
+        const title = document.getElementById('banner-title').value;
+        const link = document.getElementById('banner-link').value;
+        const status = document.getElementById('banner-status').value;
+        const startDate = document.getElementById('banner-start-date').value;
+        const endDate = document.getElementById('banner-end-date').value;
+        const position = document.getElementById('banner-position').value;
+        const imageFile = document.getElementById('banner-image').files[0];
+        
+        if (!title) {
+            alert('请输入横幅标题');
+            return;
+        }
+        
+        try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('link', link);
+            formData.append('status', status);
+            formData.append('startDate', startDate);
+            formData.append('endDate', endDate);
+            formData.append('position', position);
+            
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            let response;
+            if (bannerId) {
+                // 更新横幅
+                response = await fetch(`${API_BASE_URL}/admin/banners/${bannerId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+            } else {
+                // 创建横幅
+                response = await fetch(`${API_BASE_URL}/admin/banners`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存失败');
+            }
+            
+            // 关闭模态框
+            const bannerModal = bootstrap.Modal.getInstance(document.getElementById('bannerModal'));
+            bannerModal.hide();
+            
+            // 重新加载横幅列表
+            loadBanners();
+            
+        } catch (error) {
+            console.error('保存横幅失败:', error);
+            alert(`保存失败: ${error.message}`);
+        }
+    });
+    
+    // 编辑横幅
+    async function editBanner(bannerId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/banners/${bannerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取横幅数据失败');
+            }
+            
+            const banner = await response.json();
+            
+            // 填充表单
+            document.getElementById('banner-id').value = banner._id;
+            document.getElementById('banner-title').value = banner.title;
+            document.getElementById('banner-link').value = banner.link || '';
+            document.getElementById('banner-status').value = banner.status || 'active';
+            document.getElementById('banner-start-date').value = banner.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : '';
+            document.getElementById('banner-end-date').value = banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '';
+            document.getElementById('banner-position').value = banner.position || 1;
+            
+            // 显示图片预览
+            if (banner.imageUrl) {
+                document.getElementById('image-preview').src = banner.imageUrl;
+                document.getElementById('image-preview-container').classList.remove('d-none');
+            } else {
+                document.getElementById('image-preview-container').classList.add('d-none');
+            }
+            
+            // 更新模态框标题
+            document.getElementById('bannerModalTitle').textContent = '编辑横幅';
+            
+            // 显示模态框
+            const bannerModal = new bootstrap.Modal(document.getElementById('bannerModal'));
+            bannerModal.show();
+            
+        } catch (error) {
+            console.error('编辑横幅失败:', error);
+            alert(`编辑失败: ${error.message}`);
+        }
+    }
+    
+    // 删除横幅
+    async function deleteBanner(bannerId) {
+        if (!confirm('确定要删除这个横幅吗？')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/banners/${bannerId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '删除失败');
+            }
+            
+            // 重新加载横幅列表
+            loadBanners();
+            
+        } catch (error) {
+            console.error('删除横幅失败:', error);
+            alert(`删除失败: ${error.message}`);
+        }
+    }
+</script> 

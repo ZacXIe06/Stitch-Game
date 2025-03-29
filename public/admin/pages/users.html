@@ -1,0 +1,581 @@
+<h2 class="mt-4 mb-4">用户管理</h2>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="input-group">
+            <input type="text" id="user-search-input" class="form-control" placeholder="搜索用户名或邮箱...">
+            <select id="role-filter" class="form-select" style="max-width: 150px;">
+                <option value="">所有角色</option>
+                <option value="user">普通用户</option>
+                <option value="admin">管理员</option>
+            </select>
+            <button id="user-search-btn" class="btn btn-outline-secondary">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>用户名</th>
+                <th>邮箱</th>
+                <th>昵称</th>
+                <th>角色</th>
+                <th>注册时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="users-list">
+            <!-- 用户列表将通过JavaScript动态加载 -->
+        </tbody>
+    </table>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div id="user-pagination-info" class="text-muted">
+                显示 1-20，共 0 条
+            </div>
+        </div>
+        <div class="col-md-6">
+            <nav aria-label="分页导航">
+                <ul id="user-pagination" class="pagination justify-content-end">
+                    <!-- 分页将通过JavaScript动态加载 -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- 查看/编辑用户模态框 -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">用户详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="userTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">基本信息</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="progress-tab" data-bs-toggle="tab" data-bs-target="#progress-tab-pane" type="button" role="tab" aria-controls="progress-tab-pane" aria-selected="false">进度记录</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment-tab-pane" type="button" role="tab" aria-controls="payment-tab-pane" aria-selected="false">支付记录</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="userTabContent">
+                    <div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+                        <form id="userForm">
+                            <input type="hidden" id="user-id">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="user-username" class="form-label">用户名</label>
+                                        <input type="text" class="form-control" id="user-username" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-email" class="form-label">邮箱</label>
+                                        <input type="email" class="form-control" id="user-email" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-nickname" class="form-label">昵称</label>
+                                        <input type="text" class="form-control" id="user-nickname">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-role" class="form-label">角色</label>
+                                        <select class="form-select" id="user-role">
+                                            <option value="user">普通用户</option>
+                                            <option value="admin">管理员</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="user-membership" class="form-label">会员等级</label>
+                                        <select class="form-select" id="user-membership">
+                                            <option value="free">免费用户</option>
+                                            <option value="basic">基础会员</option>
+                                            <option value="premium">高级会员</option>
+                                            <option value="vip">VIP会员</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-coins" class="form-label">金币余额</label>
+                                        <input type="number" class="form-control" id="user-coins" min="0">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-avatar" class="form-label">头像</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="user-avatar" readonly>
+                                            <button class="btn btn-outline-secondary" type="button" id="view-avatar-btn">查看</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="user-created-at" class="form-label">注册时间</label>
+                                        <input type="text" class="form-control" id="user-created-at" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="progress-tab-pane" role="tabpanel" aria-labelledby="progress-tab" tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>图片</th>
+                                        <th>进度</th>
+                                        <th>最后保存时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-progress-list">
+                                    <!-- 进度列表将通过JavaScript动态加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="payment-tab-pane" role="tabpanel" aria-labelledby="payment-tab" tabindex="0">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>订单号</th>
+                                        <th>平台</th>
+                                        <th>金额</th>
+                                        <th>状态</th>
+                                        <th>时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-payment-list">
+                                    <!-- 支付记录将通过JavaScript动态加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="save-user-btn">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let userCurrentPage = 1;
+    let userTotalPages = 1;
+    let userSearchQuery = '';
+    let roleFilter = '';
+    let currentUserId = '';
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载用户列表
+        loadUsers();
+        
+        // 注册事件监听器
+        registerUserEventListeners();
+    });
+    
+    // 注册事件监听器
+    function registerUserEventListeners() {
+        // 搜索按钮点击事件
+        document.getElementById('user-search-btn').addEventListener('click', function() {
+            userSearchQuery = document.getElementById('user-search-input').value;
+            roleFilter = document.getElementById('role-filter').value;
+            userCurrentPage = 1;
+            loadUsers();
+        });
+        
+        // 保存用户按钮点击事件
+        document.getElementById('save-user-btn').addEventListener('click', saveUser);
+        
+        // 查看头像按钮点击事件
+        document.getElementById('view-avatar-btn').addEventListener('click', function() {
+            const avatarUrl = document.getElementById('user-avatar').value;
+            if (avatarUrl) {
+                window.open(avatarUrl, '_blank');
+            }
+        });
+    }
+    
+    // 加载用户列表
+    async function loadUsers() {
+        try {
+            let url = `${API_BASE_URL}/admin/users?page=${userCurrentPage}&limit=20`;
+            
+            if (userSearchQuery) {
+                url += `&search=${encodeURIComponent(userSearchQuery)}`;
+            }
+            
+            if (roleFilter) {
+                url += `&role=${encodeURIComponent(roleFilter)}`;
+            }
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取用户数据失败');
+            }
+            
+            const data = await response.json();
+            const users = data.users;
+            const pagination = data.pagination;
+            
+            // 更新分页信息
+            userTotalPages = pagination.pages;
+            updateUserPagination(pagination);
+            
+            // 渲染用户列表
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            if (users.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" class="text-center">没有找到符合条件的用户</td>';
+                usersList.appendChild(row);
+                return;
+            }
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.nickname || '-'}</td>
+                    <td>${getRoleText(user.role)}</td>
+                    <td>${new Date(user.createdAt).toLocaleString()}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-info view-user" data-id="${user._id}">查看</button>
+                        <button class="btn btn-sm btn-primary edit-user" data-id="${user._id}">编辑</button>
+                    </td>
+                `;
+                usersList.appendChild(row);
+            });
+            
+            // 添加事件监听器
+            document.querySelectorAll('.view-user').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    viewUser(userId, false);
+                });
+            });
+            
+            document.querySelectorAll('.edit-user').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    viewUser(userId, true);
+                });
+            });
+            
+        } catch (error) {
+            console.error('加载用户列表失败:', error);
+        }
+    }
+    
+    // 更新用户分页
+    function updateUserPagination(pagination) {
+        const paginationElement = document.getElementById('user-pagination');
+        const paginationInfo = document.getElementById('user-pagination-info');
+        
+        // 更新分页信息
+        const start = (pagination.page - 1) * 20 + 1;
+        const end = Math.min(pagination.page * 20, pagination.total);
+        paginationInfo.textContent = `显示 ${start}-${end}，共 ${pagination.total} 条`;
+        
+        // 生成分页链接
+        paginationElement.innerHTML = '';
+        
+        // 上一页
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${pagination.page === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.page - 1}">上一页</a>`;
+        paginationElement.appendChild(prevLi);
+        
+        // 页码
+        const startPage = Math.max(1, pagination.page - 2);
+        const endPage = Math.min(pagination.pages, pagination.page + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === pagination.page ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            paginationElement.appendChild(li);
+        }
+        
+        // 下一页
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${pagination.page === pagination.pages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.page + 1}">下一页</a>`;
+        paginationElement.appendChild(nextLi);
+        
+        // 添加事件监听器
+        document.querySelectorAll('#user-pagination .page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = parseInt(this.getAttribute('data-page'));
+                if (page >= 1 && page <= pagination.pages) {
+                    userCurrentPage = page;
+                    loadUsers();
+                }
+            });
+        });
+    }
+    
+    // 查看用户详情
+    async function viewUser(userId, isEdit) {
+        try {
+            currentUserId = userId;
+            
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取用户数据失败');
+            }
+            
+            const user = await response.json();
+            
+            // 填充表单
+            document.getElementById('user-id').value = user._id;
+            document.getElementById('user-username').value = user.username;
+            document.getElementById('user-email').value = user.email;
+            document.getElementById('user-nickname').value = user.nickname || '';
+            document.getElementById('user-role').value = user.role || 'user';
+            document.getElementById('user-membership').value = user.membership?.level || 'free';
+            document.getElementById('user-coins').value = user.coins?.balance || 0;
+            document.getElementById('user-avatar').value = user.avatar || '';
+            document.getElementById('user-created-at').value = new Date(user.createdAt).toLocaleString();
+            
+            // 设置表单是否可编辑
+            const formInputs = document.querySelectorAll('#userForm input, #userForm select');
+            formInputs.forEach(input => {
+                if (input.id !== 'user-created-at' && input.id !== 'user-avatar') {
+                    input.disabled = !isEdit;
+                }
+            });
+            
+            // 显示/隐藏保存按钮
+            document.getElementById('save-user-btn').style.display = isEdit ? 'block' : 'none';
+            
+            // 更新模态框标题
+            document.getElementById('userModalTitle').textContent = isEdit ? '编辑用户' : '用户详情';
+            
+            // 加载用户进度
+            loadUserProgress(userId);
+            
+            // 加载用户支付记录
+            loadUserPayments(userId);
+            
+            // 显示模态框
+            const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+            userModal.show();
+            
+        } catch (error) {
+            console.error('查看用户详情失败:', error);
+            alert(`查看失败: ${error.message}`);
+        }
+    }
+    
+    // 加载用户进度
+    async function loadUserProgress(userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/progress/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取用户进度失败');
+            }
+            
+            const progressList = await response.json();
+            
+            // 渲染进度列表
+            const progressListElement = document.getElementById('user-progress-list');
+            progressListElement.innerHTML = '';
+            
+            if (progressList.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="4" class="text-center">暂无进度记录</td>';
+                progressListElement.appendChild(row);
+                return;
+            }
+            
+            progressList.forEach(progress => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${progress.pictureId?.title || '未知图片'}</td>
+                    <td>${Math.round(progress.progress * 100)}%</td>
+                    <td>${new Date(progress.lastSaved).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info view-progress" data-id="${progress._id}">查看</button>
+                    </td>
+                `;
+                progressListElement.appendChild(row);
+            });
+            
+            // 添加事件监听器
+            document.querySelectorAll('.view-progress').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const progressId = this.getAttribute('data-id');
+                    viewProgress(progressId);
+                });
+            });
+            
+        } catch (error) {
+            console.error('加载用户进度失败:', error);
+        }
+    }
+    
+    // 加载用户支付记录
+    async function loadUserPayments(userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/payments/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取用户支付记录失败');
+            }
+            
+            const paymentList = await response.json();
+            
+            // 渲染支付记录列表
+            const paymentListElement = document.getElementById('user-payment-list');
+            paymentListElement.innerHTML = '';
+            
+            if (paymentList.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" class="text-center">暂无支付记录</td>';
+                paymentListElement.appendChild(row);
+                return;
+            }
+            
+            paymentList.forEach(payment => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${payment.orderId}</td>
+                    <td>${payment.platform}</td>
+                    <td>¥${payment.amount.toFixed(2)}</td>
+                    <td>${getPaymentStatusText(payment.status)}</td>
+                    <td>${new Date(payment.createdAt).toLocaleString()}</td>
+                `;
+                paymentListElement.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('加载用户支付记录失败:', error);
+        }
+    }
+    
+    // 保存用户信息
+    async function saveUser() {
+        try {
+            const userId = document.getElementById('user-id').value;
+            const username = document.getElementById('user-username').value;
+            const email = document.getElementById('user-email').value;
+            const nickname = document.getElementById('user-nickname').value;
+            const role = document.getElementById('user-role').value;
+            const membershipLevel = document.getElementById('user-membership').value;
+            const coinsBalance = document.getElementById('user-coins').value;
+            
+            if (!username || !email) {
+                alert('用户名和邮箱不能为空');
+                return;
+            }
+            
+            const userData = {
+                username,
+                email,
+                nickname,
+                role,
+                membership: {
+                    level: membershipLevel
+                },
+                coins: {
+                    balance: parseInt(coinsBalance)
+                }
+            };
+            
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存失败');
+            }
+            
+            // 关闭模态框
+            const userModal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            userModal.hide();
+            
+            // 重新加载用户列表
+            loadUsers();
+            
+            alert('保存成功');
+            
+        } catch (error) {
+            console.error('保存用户信息失败:', error);
+            alert(`保存失败: ${error.message}`);
+        }
+    }
+    
+    // 查看进度详情
+    function viewProgress(progressId) {
+        // 实现查看进度详情的逻辑
+        alert(`查看进度 ${progressId} 的详情`);
+    }
+    
+    // 获取角色文本
+    function getRoleText(role) {
+        switch (role) {
+            case 'admin':
+                return '<span class="badge bg-danger">管理员</span>';
+            case 'user':
+                return '<span class="badge bg-primary">普通用户</span>';
+            default:
+                return '<span class="badge bg-secondary">未知</span>';
+        }
+    }
+    
+    // 获取支付状态文本
+    function getPaymentStatusText(status) {
+        switch (status) {
+            case 'completed':
+                return '<span class="badge bg-success">已完成</span>';
+            case 'pending':
+                return '<span class="badge bg-warning">处理中</span>';
+            case 'failed':
+                return '<span class="badge bg-danger">失败</span>';
+            case 'refunded':
+                return '<span class="badge bg-info">已退款</span>';
+            default:
+                return '<span class="badge bg-secondary">未知</span>';
+        }
+    }
+</script> 

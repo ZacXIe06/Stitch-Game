@@ -3,28 +3,41 @@ const mongoose = require('mongoose');
 // 交易记录模型：记录所有支付相关的交易信息
 const transactionSchema = new mongoose.Schema({
   // 用户和交易基本信息
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
-  },
-  productId: {
-    type: String,
     required: true
+  },
+  type: {
+    type: String,
+    enum: ['purchase', 'completion', 'reward', 'admin'],
+    required: true
+  },
+  picture: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Picture',
+    required: function() {
+      return this.type === 'purchase' || this.type === 'completion';
+    }
   },
   amount: {
     type: Number,
-    required: true
+    required: function() {
+      return this.type === 'purchase' || this.type === 'reward' || this.type === 'admin';
+    }
   },
-  currency: {
-    type: String,
-    default: 'CNY'
+  duration: {
+    type: Number,
+    required: function() {
+      return this.type === 'completion';
+    }
   },
-  status: {
-    type: String,
-    enum: ['pending', 'completed', 'failed', 'refunded'],
-    default: 'pending'
+  description: {
+    type: String
+  },
+  date: {
+    type: Date,
+    default: Date.now
   },
   
   // 支付平台相关信息
@@ -53,7 +66,6 @@ const transactionSchema = new mongoose.Schema({
     type: Object,
     select: false
   },
-  description: String,
   createdAt: {
     type: Date,
     default: Date.now,
@@ -79,4 +91,10 @@ const transactionSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Transaction', transactionSchema); 
+// 添加索引以提高查询性能
+transactionSchema.index({ user: 1, type: 1 });
+transactionSchema.index({ date: -1 });
+
+const Transaction = mongoose.model('Transaction', transactionSchema);
+
+module.exports = Transaction; 

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证修复 - 涂色游戏管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 60px;
+            font-family: 'Arial', sans-serif;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .btn-primary {
+            background-color: #5D69E3;
+            border-color: #5D69E3;
+        }
+        .btn-danger {
+            background-color: #F44336;
+            border-color: #F44336;
+        }
+        pre {
+            background-color: #2C3E50;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-error {
+            color: #ff5252;
+        }
+        .log-warn {
+            color: #ffab40;
+        }
+        .log-info {
+            color: #40c4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">认证修复工具</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            检测到您可能遇到了登录循环跳转问题。此工具将帮助您修复认证问题。
+                        </div>
+                        
+                        <div class="d-grid gap-2 mb-4">
+                            <button id="check-token-btn" class="btn btn-primary">
+                                <i class="bi bi-shield-check me-2"></i>检查认证状态
+                            </button>
+                            <button id="clear-token-btn" class="btn btn-danger">
+                                <i class="bi bi-shield-x me-2"></i>清除所有令牌
+                            </button>
+                            <button id="fix-token-btn" class="btn btn-success">
+                                <i class="bi bi-shield-fill-check me-2"></i>修复并重定向
+                            </button>
+                            <button id="register-admin-btn" class="btn btn-warning">
+                                <i class="bi bi-person-plus-fill me-2"></i>注册管理员账号
+                            </button>
+                            <button id="check-server-btn" class="btn btn-info">
+                                <i class="bi bi-hdd-network me-2"></i>检查服务器状态
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">认证状态</label>
+                            <pre id="auth-status">点击"检查认证状态"按钮查看详情</pre>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">操作日志</label>
+                            <pre id="operation-log">等待操作...</pre>
+                        </div>
+                        
+                        <div class="mb-3 d-none" id="register-form">
+                            <h5>注册管理员账号</h5>
+                            <div class="mb-2">
+                                <label class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="reg-username" value="admin">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="reg-email" value="admin@example.com">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">密码</label>
+                                <input type="password" class="form-control" id="reg-password" value="admin123">
+                            </div>
+                            <div class="d-grid">
+                                <button id="submit-register-btn" class="btn btn-primary">
+                                    <i class="bi bi-person-check me-2"></i>提交注册
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="/admin/login.html" class="btn btn-outline-primary">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>返回登录页
+                            </a>
+                            <a href="/admin/dashboard.html" class="btn btn-outline-secondary">
+                                <i class="bi bi-speedometer2 me-2"></i>尝试访问仪表盘
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 操作日志
+        const operationLog = [];
+        
+        // 添加日志
+        function addLog(type, message) {
+            const time = new Date().toLocaleTimeString();
+            operationLog.unshift(`<span class="log-${type}">[${time}] [${type.toUpperCase()}] ${message}</span>`);
+            updateOperationLog();
+        }
+        
+        // 更新操作日志显示
+        function updateOperationLog() {
+            const logElement = document.getElementById('operation-log');
+            logElement.innerHTML = operationLog.join('<br>');
+        }
+        
+        // 检查令牌
+        function checkToken() {
+            addLog('info', '开始检查认证状态...');
+            
+            const statusElement = document.getElementById('auth-status');
+            let statusHtml = '';
+            
+            // 检查localStorage中的令牌
+            const adminToken = localStorage.getItem('adminToken');
+            const authToken = localStorage.getItem('authToken');
+            
+            // 检查sessionStorage中的令牌
+            const sessionAdminToken = sessionStorage.getItem('adminToken');
+            const sessionAuthToken = sessionStorage.getItem('authToken');
+            
+            if (adminToken) {
+                addLog('info', '在localStorage中找到adminToken');
+                statusHtml += `<span class="log-info">localStorage中的adminToken: ${adminToken.substring(0, 20)}...</span><br>`;
+                
+                // 尝试解析JWT
+                try {
+                    const tokenParts = adminToken.split('.');
+                    if (tokenParts.length === 3) {
+                        try {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            const expDate = payload.exp ? new Date(payload.exp * 1000).toLocaleString() : '未知';
+                            
+                            statusHtml += `<span class="log-info">令牌有效期至: ${expDate}</span><br>`;
+                            
+                            if (payload.exp && payload.exp * 1000 < Date.now()) {
+                                statusHtml += `<span class="log-error">令牌已过期!</span><br>`;
+                                addLog('error', '令牌已过期');
+                            }
+                            
+                            if (payload.userId) {
+                                statusHtml += `<span class="log-info">用户ID: ${payload.userId}</span><br>`;
+                            }
+                            
+                            if (payload.role) {
+                                statusHtml += `<span class="log-info">用户角色: ${payload.role}</span><br>`;
+                            }
+                        } catch (e) {
+                            statusHtml += `<span class="log-error">解析令牌载荷失败: ${e.message}</span><br>`;
+                            addLog('error', `解析令牌载荷失败: ${e.message}`);
+                        }
+                    } else {
+                        statusHtml += `<span class="log-error">令牌格式错误: JWT应为三部分（header.payload.signature）</span><br>`;
+                        addLog('error', '令牌格式错误');
+                    }
+                } catch (e) {
+                    statusHtml += `<span class="log-error">解析令牌失败: ${e.message}</span><br>`;
+                    addLog('error', `解析令牌失败: ${e.message}`);
+                }
+            } else {
+                statusHtml += `<span class="log-warn">localStorage中未找到adminToken</span><br>`;
+                addLog('warn', 'localStorage中未找到adminToken');
+            }
+            
+            if (authToken) {
+                statusHtml += `<span class="log-warn">localStorage中找到authToken (应使用adminToken): ${authToken.substring(0, 20)}...</span><br>`;
+                addLog('warn', '在localStorage中找到authToken (应使用adminToken)');
+            }
+            
+            if (sessionAdminToken) {
+                statusHtml += `<span class="log-warn">sessionStorage中找到adminToken (应使用localStorage): ${sessionAdminToken.substring(0, 20)}...</span><br>`;
+                addLog('warn', '在sessionStorage中找到adminToken (应使用localStorage)');
+            }
+            
+            if (sessionAuthToken) {
+                statusHtml += `<span class="log-warn">sessionStorage中找到authToken: ${sessionAuthToken.substring(0, 20)}...</span><br>`;
+                addLog('warn', '在sessionStorage中找到authToken');
+            }
+            
+            if (!adminToken && !authToken && !sessionAdminToken && !sessionAuthToken) {
+                statusHtml += `<span class="log-error">未找到任何认证令牌</span><br>`;
+                addLog('error', '未找到任何认证令牌');
+            }
+            
+            // 显示当前页面路径
+            statusHtml += `<span class="log-info">当前页面路径: ${window.location.pathname}</span><br>`;
+            
+            statusElement.innerHTML = statusHtml;
+            addLog('info', '认证状态检查完成');
+        }
+        
+        // 清除所有令牌
+        function clearAllTokens() {
+            addLog('info', '开始清除所有令牌...');
+            
+            // 清除localStorage中的令牌
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('authToken');
+            
+            // 清除sessionStorage中的令牌
+            sessionStorage.removeItem('adminToken');
+            sessionStorage.removeItem('authToken');
+            
+            addLog('success', '所有令牌已清除');
+            
+            // 更新状态显示
+            checkToken();
+        }
+        
+        // 修复并重定向
+        function fixAndRedirect() {
+            addLog('info', '开始修复认证问题...');
+            
+            // 清除所有令牌
+            clearAllTokens();
+            
+            // 询问用户
+            if (confirm('认证数据已重置。是否跳转到登录页面？')) {
+                addLog('info', '即将跳转到登录页面...');
+                setTimeout(() => {
+                    window.location.href = '/admin/login.html';
+                }, 1000);
+            } else {
+                addLog('info', '用户取消跳转');
+            }
+        }
+        
+        // 注册管理员账号
+        function registerAdmin() {
+            addLog('info', '显示注册管理员表单');
+            const registerForm = document.getElementById('register-form');
+            registerForm.classList.remove('d-none');
+        }
+        
+        // 提交注册
+        async function submitRegister() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            if (!username || !email || !password) {
+                addLog('error', '请填写完整的注册信息');
+                return;
+            }
+            
+            addLog('info', `准备注册管理员账号: ${username}, ${email}`);
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        role: 'admin'
+                    })
+                });
+                
+                const responseText = await response.text();
+                addLog('info', `注册响应: ${responseText}`);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    addLog('error', `解析响应失败: ${e.message}`);
+                    return;
+                }
+                
+                if (!response.ok) {
+                    addLog('error', `注册失败: ${data.message || data.error || '未知错误'}`);
+                    return;
+                }
+                
+                addLog('success', '管理员账号注册成功');
+                
+                if (data.token) {
+                    addLog('info', '保存令牌到localStorage');
+                    localStorage.setItem('adminToken', data.token);
+                    addLog('success', '令牌已保存');
+                }
+                
+                // 隐藏注册表单
+                document.getElementById('register-form').classList.add('d-none');
+                
+                // 更新状态显示
+                checkToken();
+                
+            } catch (error) {
+                addLog('error', `注册请求失败: ${error.message}`);
+            }
+        }
+        
+        // 检查服务器状态
+        async function checkServerStatus() {
+            addLog('info', '开始检查服务器状态...');
+            
+            const statusElement = document.getElementById('auth-status');
+            let statusHtml = '<h5>服务器状态检查结果：</h5>';
+            
+            // 检查服务器连接
+            try {
+                // 检查主页
+                addLog('info', '检查主页...');
+                try {
+                    const homeResponse = await fetch('/', { method: 'GET' });
+                    statusHtml += `<div>主页访问: <span class="${homeResponse.ok ? 'text-success' : 'text-danger'}">${homeResponse.ok ? '成功' : '失败'}</span></div>`;
+                    addLog(homeResponse.ok ? 'info' : 'error', `主页访问${homeResponse.ok ? '成功' : '失败'}`);
+                } catch (e) {
+                    statusHtml += `<div>主页访问: <span class="text-danger">失败 (${e.message})</span></div>`;
+                    addLog('error', `主页访问失败: ${e.message}`);
+                }
+                
+                // 检查API
+                addLog('info', '检查API...');
+                try {
+                    const apiResponse = await fetch('/api/ping', { method: 'GET' });
+                    statusHtml += `<div>API访问: <span class="${apiResponse.ok ? 'text-success' : 'text-danger'}">${apiResponse.ok ? '成功' : '失败'}</span></div>`;
+                    addLog(apiResponse.ok ? 'info' : 'error', `API访问${apiResponse.ok ? '成功' : '失败'}`);
+                    
+                    if (apiResponse.ok) {
+                        const apiText = await apiResponse.text();
+                        statusHtml += `<div>API响应: <span class="text-info">${apiText}</span></div>`;
+                    }
+                } catch (e) {
+                    statusHtml += `<div>API访问: <span class="text-danger">失败 (${e.message})</span></div>`;
+                    addLog('error', `API访问失败: ${e.message}`);
+                }
+                
+                // 检查认证API
+                addLog('info', '检查认证API...');
+                try {
+                    const authResponse = await fetch('/api/auth/ping', { method: 'GET' });
+                    statusHtml += `<div>认证API: <span class="${authResponse.ok ? 'text-success' : 'text-danger'}">${authResponse.ok ? '成功' : '失败'}</span></div>`;
+                    addLog(authResponse.ok ? 'info' : 'error', `认证API${authResponse.ok ? '成功' : '失败'}`);
+                } catch (e) {
+                    statusHtml += `<div>认证API: <span class="text-danger">失败 (${e.message})</span></div>`;
+                    addLog('error', `认证API访问失败: ${e.message}`);
+                }
+                
+                // 检查登录API
+                addLog('info', '检查登录API...');
+                try {
+                    const loginCheckResponse = await fetch('/api/auth/login', { 
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: 'test',
+                            password: 'test'
+                        })
+                    });
+                    
+                    statusHtml += `<div>登录API: <span class="${loginCheckResponse.status !== 404 ? 'text-success' : 'text-danger'}">${loginCheckResponse.status !== 404 ? '可访问' : '不可访问'}</span> (状态码: ${loginCheckResponse.status})</div>`;
+                    addLog(loginCheckResponse.status !== 404 ? 'info' : 'error', `登录API${loginCheckResponse.status !== 404 ? '可访问' : '不可访问'} (状态码: ${loginCheckResponse.status})`);
+                } catch (e) {
+                    statusHtml += `<div>登录API: <span class="text-danger">失败 (${e.message})</span></div>`;
+                    addLog('error', `登录API访问失败: ${e.message}`);
+                }
+                
+                // 诊断结果
+                statusHtml += '<h5 class="mt-3">诊断结果：</h5>';
+                
+                if (statusHtml.includes('text-danger')) {
+                    statusHtml += '<div class="alert alert-danger">检测到服务器连接问题，请确认后端服务是否正常运行</div>';
+                    addLog('error', '检测到服务器连接问题，请确认后端服务是否正常运行');
+                } else {
+                    statusHtml += '<div class="alert alert-success">服务器连接正常</div>';
+                    addLog('success', '服务器连接正常');
+                }
+                
+            } catch (error) {
+                statusHtml += `<div class="alert alert-danger">服务器状态检查失败: ${error.message}</div>`;
+                addLog('error', `服务器状态检查失败: ${error.message}`);
+            }
+            
+            statusElement.innerHTML = statusHtml;
+            addLog('info', '服务器状态检查完成');
+        }
+        
+        // 添加事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查令牌按钮
+            const checkTokenBtn = document.getElementById('check-token-btn');
+            if (checkTokenBtn) {
+                checkTokenBtn.addEventListener('click', checkToken);
+            }
+            
+            // 清除令牌按钮
+            const clearTokenBtn = document.getElementById('clear-token-btn');
+            if (clearTokenBtn) {
+                clearTokenBtn.addEventListener('click', clearAllTokens);
+            }
+            
+            // 修复并重定向按钮
+            const fixTokenBtn = document.getElementById('fix-token-btn');
+            if (fixTokenBtn) {
+                fixTokenBtn.addEventListener('click', fixAndRedirect);
+            }
+            
+            // 注册管理员按钮
+            const registerAdminBtn = document.getElementById('register-admin-btn');
+            if (registerAdminBtn) {
+                registerAdminBtn.addEventListener('click', registerAdmin);
+            }
+            
+            // 提交注册按钮
+            const submitRegisterBtn = document.getElementById('submit-register-btn');
+            if (submitRegisterBtn) {
+                submitRegisterBtn.addEventListener('click', submitRegister);
+            }
+            
+            // 检查服务器状态按钮
+            const checkServerBtn = document.getElementById('check-server-btn');
+            if (checkServerBtn) {
+                checkServerBtn.addEventListener('click', checkServerStatus);
+            }
+            
+            // 初始日志
+            addLog('info', '认证修复工具已加载');
+        });
+    </script>
+</body>
+</html> 

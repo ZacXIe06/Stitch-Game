@@ -17,6 +17,21 @@ const pictureSchema = new mongoose.Schema({
   thumbnailUrl: {
     type: String
   },
+  // 图片尺寸
+  width: {
+    type: Number,
+    default: 300
+  },
+  height: {
+    type: Number,
+    default: 300
+  },
+  // 图片格式
+  format: {
+    type: String,
+    enum: ['png', 'jpg', 'svg'],
+    default: 'png'
+  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',

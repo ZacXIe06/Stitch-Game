@@ -1,0 +1,544 @@
+<!-- 图片管理页面 -->
+<div id="pictures-page" class="content-page">
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="page-title">图片管理</h2>
+                <p class="text-muted">管理所有涂色图片</p>
+            </div>
+            <div class="col-auto">
+                <button id="addPictureBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 添加图片
+                </button>
+            </div>
+        </div>
+        
+        <!-- 图片列表区域 -->
+        <div class="card shadow">
+            <div class="card-body">
+                <div id="pictures-container" class="pictures-container">
+                    <!-- 图片内容将通过JavaScript加载 -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载图片中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 预加载图片占位符 -->
+<div style="display:none;">
+    <img id="placeholderImage" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAMAAAC8EZcfAAAAWlBMVEX////29vaysrLy8vLu7u6np6fOzs7i4uK+vr7Z2dnCwsL8/Px5eXny8vLj4+NbW1s3NzcZGRkoKCgAAADe3t5ra2upqalQUFA/Pz8hISF+fn5ISEgQEBBjY2OTMQRGAAADuElEQVR4nO2b27KCMAxFCy1yv4hyfP//Mw+CgJZb23RX9jhrXmacZZuSpmkKgYODg4ODg4ODg4ODN3TNoF3NL2ikzz36Ql/UjfRZbBSVxTNKr9J/LGLhu6LFE2lctNJnYyEtXH5n6DIdTVqyWlsM9Pl+wUqe9hJVaeCbnGFoGKxHyTo0uG9jGbp7vFpv0nUB/kBKf77fsSl1wJM0qW8Y76Hu4P7Sdb2W79eiCwbDFT3yHnriogqmhsrJDj0PspBdQW1R1nI5byCwQmVVTb2BDcqrjBxpPLUEKJwPGHZvIIfCqlIXjWcmBqgKUuFEGHkWmK29GBRI0zzVQkgKVU4yxiIwXEWpZPQipPCaO0Y2SuiCUmYYRb0cSgtOJ+lzMw9FYnL8/SyvQ5nUmBnCrFy6raaLJiYG/lVgZIx5eXlGxK9nZqHCk4sJFYaYP2VkpYWi98T/xT2iFrbsH9FvWmF2cqoGF0bMn20+5vYSvOqkf0RYW/mZXNKwrj1A93CcvdU/obCWXGVTsEVXYH6i8wIiXaS4w/XwJEyFKxVqqOJu4YKmhQuwsY9YHw8OTaHfsCMVMECdmNzg/HcxQLqMJSp44P7Kh5pxeAstQRRtgIMKVHH3XK7RQc1ckPGE1kC41qUQbXSyZ28E+Iu5iQEGTJJnYv1aQsEkSNQOeJxMaXOTQFrFRpRZMh4hsMEklS3wvIdAo2hKfWqGQANp5eoQ3nwG2qg31qeNmYuIVe+JtUCUQqXRZdQBnwEX9JmTJ/Sx4V+QeAjc2C7gW+GWAlM7RdLw97EtBdaJjeL7/UBbxUcNNCM0y6cPB04/+6u5YwuFL7z9sMUPLdT9Ixt96uKjkY0+9rLcKz92W2ivdLZTCVa0ggtc4AIXuMAfFsiJOqhSR0wbOYh5GRrZyOh5rlVVm6hBIRuF5L7lFhpFlOl0uH4Z9OD9HaGHttlE51dZPQQ1NuNoU5Kyi+ELG0nNVE3dXGkfE7XMiJtuYx2w/3ixk2QMNc3ESMF4JEn7GrfQSTqcAd6VsMXFl0C+BJdgWuXnwMmgwlmyYgORQW8Tn9j1NdE7qTcKbQNaUCh0d7sZuKBw6lDioUdwIREW9KDXWe9x92kI7fZTvzSYwMv4Fw3E6MNfN2BRpYr/8wY3ChAG5tgoPJLu+6WGFyeq/qMGMPnPNXDhqwKvLvBR6TGd3qS3c/i93f1Ow+4dXsxvcHBwcHBwcHBwcHAgxTeZqyq9wtAXIgAAAABJRU5ErkJggg==" alt="占位符">
+</div>
+
+<!-- 图片编辑模态框 -->
+<div class="modal fade" id="pictureModal" tabindex="-1" aria-labelledby="pictureModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pictureModalTitle">添加图片</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="pictureForm">
+                    <input type="hidden" id="pictureId">
+                    
+                    <div class="mb-3">
+                        <label for="pictureTitle" class="form-label">图片标题</label>
+                        <input type="text" class="form-control" id="pictureTitle" placeholder="输入图片标题" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pictureDescription" class="form-label">图片描述</label>
+                        <textarea class="form-control" id="pictureDescription" rows="2" placeholder="输入图片描述"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">图片状态</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="pictureStatus" id="pictureStatusActive" value="active" checked>
+                                    <label class="form-check-label" for="pictureStatusActive">启用</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="pictureStatus" id="pictureStatusInactive" value="inactive">
+                                    <label class="form-check-label" for="pictureStatusInactive">禁用</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="picturePosition" class="form-label">显示顺序</label>
+                            <input type="number" class="form-control" id="picturePosition" value="0" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">标签</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="tagNew" value="new">
+                                <label class="form-check-label" for="tagNew">New</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="tagHot" value="hot">
+                                <label class="form-check-label" for="tagHot">Hot</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="tagRare" value="rare">
+                                <label class="form-check-label" for="tagRare">Rare</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="tagLimited" value="limited">
+                                <label class="form-check-label" for="tagLimited">Limited</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">图片</label>
+                        <div class="d-flex align-items-center">
+                            <button type="button" id="uploadPictureBtn" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-upload"></i> 上传图片
+                            </button>
+                            <input type="file" id="pictureImage" class="d-none" accept="image/*">
+                            <small class="text-muted">支持JPG、PNG和SVG格式，最大10MB</small>
+                        </div>
+                        <div id="picturePreviewContainer" class="mt-2 d-none">
+                            <img id="picturePreview" src="" alt="图片预览" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" id="savePictureBtn" class="btn btn-primary">保存图片</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let searchQuery = '';
+    let categoryFilter = '';
+    let difficultyFilter = '';
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载分类选项
+        loadCategories();
+        
+        // 加载图片列表
+        loadPictures();
+        
+        // 注册事件监听器
+        registerEventListeners();
+    });
+    
+    // 注册事件监听器
+    function registerEventListeners() {
+        // 搜索按钮点击事件
+        document.getElementById('search-btn').addEventListener('click', function() {
+            searchQuery = document.getElementById('search-input').value;
+            categoryFilter = document.getElementById('category-filter').value;
+            difficultyFilter = document.getElementById('difficulty-filter').value;
+            currentPage = 1;
+            loadPictures();
+        });
+        
+        // 添加图片按钮点击事件
+        document.getElementById('add-picture-btn').addEventListener('click', function() {
+            // 重置表单
+            document.getElementById('pictureForm').reset();
+            document.getElementById('picture-id').value = '';
+            document.getElementById('picture-preview-container').classList.add('d-none');
+            
+            // 更新模态框标题
+            document.getElementById('pictureModalTitle').textContent = '添加图片';
+            
+            // 显示模态框
+            const pictureModal = new bootstrap.Modal(document.getElementById('pictureModal'));
+            pictureModal.show();
+        });
+        
+        // 图片预览
+        document.getElementById('picture-image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('picture-preview').src = e.target.result;
+                    document.getElementById('picture-preview-container').classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 保存图片按钮点击事件
+        document.getElementById('save-picture-btn').addEventListener('click', savePicture);
+    }
+    
+    // 加载分类选项
+    async function loadCategories() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/categories/tree`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取分类数据失败');
+            }
+            
+            const categories = await response.json();
+            
+            // 渲染分类选项
+            const categoryFilter = document.getElementById('category-filter');
+            const pictureCategory = document.getElementById('picture-category');
+            
+            // 清空现有选项
+            categoryFilter.innerHTML = '<option value="">所有分类</option>';
+            pictureCategory.innerHTML = '';
+            
+            // 添加分类选项
+            renderCategoryOptions(categories, categoryFilter, 0);
+            renderCategoryOptions(categories, pictureCategory, 0);
+            
+        } catch (error) {
+            console.error('加载分类选项失败:', error);
+        }
+    }
+    
+    // 递归渲染分类选项
+    function renderCategoryOptions(categories, selectElement, level) {
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category._id;
+            option.textContent = '　'.repeat(level) + category.name;
+            selectElement.appendChild(option);
+            
+            if (category.children && category.children.length > 0) {
+                renderCategoryOptions(category.children, selectElement, level + 1);
+            }
+        });
+    }
+    
+    // 加载图片列表
+    async function loadPictures() {
+        try {
+            let url = `${API_BASE_URL}/admin/pictures?page=${currentPage}&limit=20`;
+            
+            if (searchQuery) {
+                url += `&search=${encodeURIComponent(searchQuery)}`;
+            }
+            
+            if (categoryFilter) {
+                url += `&category=${encodeURIComponent(categoryFilter)}`;
+            }
+            
+            if (difficultyFilter) {
+                url += `&difficulty=${encodeURIComponent(difficultyFilter)}`;
+            }
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取图片数据失败');
+            }
+            
+            const data = await response.json();
+            const pictures = data.pictures;
+            const pagination = data.pagination;
+            
+            // 更新分页信息
+            totalPages = pagination.pages;
+            updatePagination(pagination);
+            
+            // 渲染图片列表
+            const picturesList = document.getElementById('pictures-list');
+            picturesList.innerHTML = '';
+            
+            if (pictures.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" class="text-center">没有找到符合条件的图片</td>';
+                picturesList.appendChild(row);
+                return;
+            }
+            
+            pictures.forEach(picture => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${picture.title}</td>
+                    <td><img src="${picture.thumbnailUrl}" alt="${picture.title}" width="80"></td>
+                    <td>${picture.category ? picture.category.name : '未分类'}</td>
+                    <td>${getDifficultyText(picture.difficulty)}</td>
+                    <td>${getStatusText(picture.status)}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-primary edit-picture" data-id="${picture._id}">编辑</button>
+                        <button class="btn btn-sm btn-danger delete-picture" data-id="${picture._id}">删除</button>
+                    </td>
+                `;
+                picturesList.appendChild(row);
+            });
+            
+            // 添加事件监听器
+            document.querySelectorAll('.edit-picture').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const pictureId = this.getAttribute('data-id');
+                    editPicture(pictureId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-picture').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const pictureId = this.getAttribute('data-id');
+                    deletePicture(pictureId);
+                });
+            });
+            
+        } catch (error) {
+            console.error('加载图片列表失败:', error);
+        }
+    }
+    
+    // 更新分页
+    function updatePagination(pagination) {
+        const paginationElement = document.getElementById('pagination');
+        const paginationInfo = document.getElementById('pagination-info');
+        
+        // 更新分页信息
+        const start = (pagination.page - 1) * 20 + 1;
+        const end = Math.min(pagination.page * 20, pagination.total);
+        paginationInfo.textContent = `显示 ${start}-${end}，共 ${pagination.total} 条`;
+        
+        // 生成分页链接
+        paginationElement.innerHTML = '';
+        
+        // 上一页
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${pagination.page === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.page - 1}">上一页</a>`;
+        paginationElement.appendChild(prevLi);
+        
+        // 页码
+        const startPage = Math.max(1, pagination.page - 2);
+        const endPage = Math.min(pagination.pages, pagination.page + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === pagination.page ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            paginationElement.appendChild(li);
+        }
+        
+        // 下一页
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${pagination.page === pagination.pages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.page + 1}">下一页</a>`;
+        paginationElement.appendChild(nextLi);
+        
+        // 添加事件监听器
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = parseInt(this.getAttribute('data-page'));
+                if (page >= 1 && page <= pagination.pages) {
+                    currentPage = page;
+                    loadPictures();
+                }
+            });
+        });
+    }
+    
+    // 保存图片
+    async function savePicture() {
+        const pictureId = document.getElementById('picture-id').value;
+        const title = document.getElementById('picture-title').value;
+        const categoryId = document.getElementById('picture-category').value;
+        const difficulty = document.getElementById('picture-difficulty').value;
+        const status = document.getElementById('picture-status').value;
+        const tags = document.getElementById('picture-tags').value;
+        const position = document.getElementById('picture-position').value;
+        const description = document.getElementById('picture-description').value;
+        const imageFile = document.getElementById('picture-image').files[0];
+        
+        if (!title) {
+            alert('请输入图片标题');
+            return;
+        }
+        
+        if (!categoryId) {
+            alert('请选择分类');
+            return;
+        }
+        
+        try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('categoryId', categoryId);
+            formData.append('difficulty', difficulty);
+            formData.append('status', status);
+            formData.append('tags', tags);
+            formData.append('position', position);
+            formData.append('description', description);
+            
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            let response;
+            if (pictureId) {
+                // 更新图片
+                response = await fetch(`${API_BASE_URL}/admin/pictures/${pictureId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+            } else {
+                // 创建图片
+                response = await fetch(`${API_BASE_URL}/admin/pictures`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存失败');
+            }
+            
+            // 关闭模态框
+            const pictureModal = bootstrap.Modal.getInstance(document.getElementById('pictureModal'));
+            pictureModal.hide();
+            
+            // 重新加载图片列表
+            loadPictures();
+            
+        } catch (error) {
+            console.error('保存图片失败:', error);
+            alert(`保存失败: ${error.message}`);
+        }
+    }
+    
+    // 编辑图片
+    async function editPicture(pictureId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/pictures/${pictureId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取图片数据失败');
+            }
+            
+            const picture = await response.json();
+            
+            // 填充表单
+            document.getElementById('picture-id').value = picture._id;
+            document.getElementById('picture-title').value = picture.title;
+            document.getElementById('picture-category').value = picture.category;
+            document.getElementById('picture-difficulty').value = picture.difficulty || 'medium';
+            document.getElementById('picture-status').value = picture.status || 'active';
+            document.getElementById('picture-tags').value = picture.tags ? picture.tags.join(',') : '';
+            document.getElementById('picture-position').value = picture.position || 1;
+            document.getElementById('picture-description').value = picture.description || '';
+            
+            // 显示图片预览
+            if (picture.thumbnailUrl) {
+                document.getElementById('picture-preview').src = picture.thumbnailUrl;
+                document.getElementById('picture-preview-container').classList.remove('d-none');
+            } else {
+                document.getElementById('picture-preview-container').classList.add('d-none');
+            }
+            
+            // 更新模态框标题
+            document.getElementById('pictureModalTitle').textContent = '编辑图片';
+            
+            // 显示模态框
+            const pictureModal = new bootstrap.Modal(document.getElementById('pictureModal'));
+            pictureModal.show();
+            
+        } catch (error) {
+            console.error('编辑图片失败:', error);
+            alert(`编辑失败: ${error.message}`);
+        }
+    }
+    
+    // 删除图片
+    async function deletePicture(pictureId) {
+        if (!confirm('确定要删除这个图片吗？')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/pictures/${pictureId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '删除失败');
+            }
+            
+            // 重新加载图片列表
+            loadPictures();
+            
+        } catch (error) {
+            console.error('删除图片失败:', error);
+            alert(`删除失败: ${error.message}`);
+        }
+    }
+    
+    // 获取难度文本
+    function getDifficultyText(difficulty) {
+        switch (difficulty) {
+            case 'easy':
+                return '<span class="badge bg-success">简单</span>';
+            case 'medium':
+                return '<span class="badge bg-warning">中等</span>';
+            case 'hard':
+                return '<span class="badge bg-danger">困难</span>';
+            default:
+                return '<span class="badge bg-secondary">未知</span>';
+        }
+    }
+    
+    // 获取状态文本
+    function getStatusText(status) {
+        switch (status) {
+            case 'active':
+                return '<span class="badge bg-success">启用</span>';
+            case 'inactive':
+                return '<span class="badge bg-secondary">禁用</span>';
+            default:
+                return '<span class="badge bg-secondary">未知</span>';
+        }
+    }
+
+    // 添加图片加载失败处理
+    function handleImageError(image) {
+        console.log('图片加载失败:', image.src);
+        image.src = document.getElementById('placeholderImage').src;
+    }
+</script> 

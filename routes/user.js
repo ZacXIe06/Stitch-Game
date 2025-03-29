@@ -16,6 +16,56 @@ router.get('/profile', authenticateUser, async (req, res) => {
   }
 });
 
+// 更新用户信息
+router.post('/profile', authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const {
+      nickname,
+      avatar,
+      bio,
+      gender,
+      birthday,
+      // 其他可更新的字段...
+    } = req.body;
+
+    // 构建更新对象，只包含提供的字段
+    const updateData = {};
+    if (nickname !== undefined) updateData.nickname = nickname;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (bio !== undefined) updateData.bio = bio;
+    if (gender !== undefined) updateData.gender = gender;
+    if (birthday !== undefined) updateData.birthday = birthday;
+    
+    // 添加更新时间
+    updateData.updatedAt = new Date();
+
+    // 更新用户信息
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('更新用户信息错误:', error);
+    
+    // 处理验证错误
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ error: '验证失败', details: errors });
+    }
+    
+    // 处理重复键错误
+    if (error.code === 11000) {
+      return res.status(400).json({ error: '该用户名或邮箱已被使用' });
+    }
+    
+    res.status(500).json({ error: '服务器错误', details: error.message });
+  }
+});
+
 // 获取排行榜
 router.get('/ranking', authenticateUser, async (req, res) => {
   try {

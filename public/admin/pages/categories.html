@@ -1,0 +1,309 @@
+<h2 class="mt-4 mb-4">分类管理</h2>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <button id="add-category-btn" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>添加新分类
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>名称</th>
+                <th>父分类</th>
+                <th>图片数量</th>
+                <th>显示顺序</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="categories-list">
+            <!-- 分类列表将通过JavaScript动态加载 -->
+        </tbody>
+    </table>
+</div>
+
+<!-- 添加/编辑分类模态框 -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalTitle">添加分类</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="category-id">
+                    <div class="mb-3">
+                        <label for="category-name" class="form-label">名称</label>
+                        <input type="text" class="form-control" id="category-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category-parent" class="form-label">父分类</label>
+                        <select class="form-select" id="category-parent">
+                            <option value="">无 (顶级分类)</option>
+                            <!-- 分类选项将通过JavaScript动态加载 -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category-position" class="form-label">显示顺序</label>
+                        <input type="number" class="form-control" id="category-position" min="1" value="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="save-category-btn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载分类列表
+        loadCategories();
+        
+        // 注册事件监听器
+        registerCategoryEventListeners();
+    });
+    
+    // 注册事件监听器
+    function registerCategoryEventListeners() {
+        // 添加分类按钮点击事件
+        document.getElementById('add-category-btn').addEventListener('click', function() {
+            // 重置表单
+            document.getElementById('categoryForm').reset();
+            document.getElementById('category-id').value = '';
+            
+            // 更新模态框标题
+            document.getElementById('categoryModalTitle').textContent = '添加分类';
+            
+            // 显示模态框
+            const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+            categoryModal.show();
+        });
+        
+        // 保存分类按钮点击事件
+        document.getElementById('save-category-btn').addEventListener('click', saveCategory);
+    }
+    
+    // 加载分类列表
+    async function loadCategories() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/categories/tree`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取分类数据失败');
+            }
+            
+            const categories = await response.json();
+            
+            // 渲染分类列表
+            renderCategoryList(categories);
+            
+            // 渲染父分类选项
+            const parentSelect = document.getElementById('category-parent');
+            parentSelect.innerHTML = '<option value="">无 (顶级分类)</option>';
+            renderCategoryOptions(categories, parentSelect, 0);
+            
+        } catch (error) {
+            console.error('加载分类列表失败:', error);
+        }
+    }
+    
+    // 渲染分类列表
+    function renderCategoryList(categories, level = 0, parentName = '') {
+        const categoriesList = document.getElementById('categories-list');
+        
+        if (level === 0) {
+            categoriesList.innerHTML = '';
+            
+            if (categories.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" class="text-center">暂无分类数据</td>';
+                categoriesList.appendChild(row);
+                return;
+            }
+        }
+        
+        categories.forEach(category => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${'　'.repeat(level)}${level > 0 ? '└ ' : ''}${category.name}</td>
+                <td>${parentName || '-'}</td>
+                <td>${category.pictureCount || 0}</td>
+                <td>${category.position || 1}</td>
+                <td class="action-buttons">
+                    <button class="btn btn-sm btn-primary edit-category" data-id="${category._id}">编辑</button>
+                    <button class="btn btn-sm btn-danger delete-category" data-id="${category._id}">删除</button>
+                </td>
+            `;
+            categoriesList.appendChild(row);
+            
+            if (category.children && category.children.length > 0) {
+                renderCategoryList(category.children, level + 1, category.name);
+            }
+        });
+        
+        // 添加事件监听器
+        if (level === 0) {
+            document.querySelectorAll('.edit-category').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const categoryId = this.getAttribute('data-id');
+                    editCategory(categoryId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-category').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const categoryId = this.getAttribute('data-id');
+                    deleteCategory(categoryId);
+                });
+            });
+        }
+    }
+    
+    // 递归渲染分类选项
+    function renderCategoryOptions(categories, selectElement, level) {
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category._id;
+            option.textContent = '　'.repeat(level) + category.name;
+            selectElement.appendChild(option);
+            
+            if (category.children && category.children.length > 0) {
+                renderCategoryOptions(category.children, selectElement, level + 1);
+            }
+        });
+    }
+    
+    // 保存分类
+    async function saveCategory() {
+        const categoryId = document.getElementById('category-id').value;
+        const name = document.getElementById('category-name').value;
+        const parentId = document.getElementById('category-parent').value;
+        const position = document.getElementById('category-position').value;
+        
+        if (!name) {
+            alert('请输入分类名称');
+            return;
+        }
+        
+        try {
+            const categoryData = {
+                name,
+                parentId: parentId || null,
+                position: parseInt(position)
+            };
+            
+            let response;
+            if (categoryId) {
+                // 更新分类
+                response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(categoryData)
+                });
+            } else {
+                // 创建分类
+                response = await fetch(`${API_BASE_URL}/admin/categories`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(categoryData)
+                });
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '保存失败');
+            }
+            
+            // 关闭模态框
+            const categoryModal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
+            categoryModal.hide();
+            
+            // 重新加载分类列表
+            loadCategories();
+            
+        } catch (error) {
+            console.error('保存分类失败:', error);
+            alert(`保存失败: ${error.message}`);
+        }
+    }
+    
+    // 编辑分类
+    async function editCategory(categoryId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('获取分类数据失败');
+            }
+            
+            const category = await response.json();
+            
+            // 填充表单
+            document.getElementById('category-id').value = category._id;
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-parent').value = category.parentId || '';
+            document.getElementById('category-position').value = category.position || 1;
+            
+            // 更新模态框标题
+            document.getElementById('categoryModalTitle').textContent = '编辑分类';
+            
+            // 显示模态框
+            const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+            categoryModal.show();
+            
+        } catch (error) {
+            console.error('编辑分类失败:', error);
+            alert(`编辑失败: ${error.message}`);
+        }
+    }
+    
+    // 删除分类
+    async function deleteCategory(categoryId) {
+        if (!confirm('确定要删除这个分类吗？如果有子分类或关联图片，将无法删除。')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/categories/${categoryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '删除失败');
+            }
+            
+            // 重新加载分类列表
+            loadCategories();
+            
+        } catch (error) {
+            console.error('删除分类失败:', error);
+            alert(`删除失败: ${error.message}`);
+        }
+    }
+</script> 

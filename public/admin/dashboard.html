@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 涂色游戏管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5D69E3;
+            --secondary-color: #FF8C66;
+            --success-color: #4CAF50;
+            --info-color: #2196F3;
+            --warning-color: #FF9800;
+            --danger-color: #F44336;
+            --dark-color: #2C3E50;
+            --light-color: #F8F9FA;
+            --gray-color: #95A5A6;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            padding-top: 60px;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #333;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: var(--dark-color);
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 60px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #fff;
+            padding: 0.75rem 1rem;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid var(--secondary-color);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #1a2a3a 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            padding-top: .75rem;
+            padding-bottom: .75rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .navbar .navbar-toggler {
+            top: .25rem;
+            right: 1rem;
+        }
+        
+        .main-content {
+            margin-left: 240px;
+            padding: 20px;
+        }
+        
+        .stat-card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+        
+        .stat-card .title {
+            font-size: 18px;
+            color: var(--gray-color);
+            font-weight: 500;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            border: none;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 15px 20px;
+        }
+        
+        .card-title {
+            margin-bottom: 0;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(93, 105, 227, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4A56C9;
+            border-color: #4A56C9;
+            box-shadow: 0 6px 8px rgba(93, 105, 227, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success:hover {
+            background-color: #43A047;
+            border-color: #43A047;
+            box-shadow: 0 6px 8px rgba(76, 175, 80, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-light {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-light:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 15px 20px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 15px 20px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(93, 105, 227, 0.25);
+        }
+        
+        .badge {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">涂色游戏管理后台</a>
+            <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="d-flex">
+                <button id="logout-btn" class="btn btn-outline-light me-2">
+                    <i class="bi bi-box-arrow-right"></i> 退出登录
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="dashboard.html">
+                                <i class="bi bi-speedometer2"></i>
+                                仪表盘
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categories.html">
+                                <i class="bi bi-folder"></i>
+                                分类管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="pictures.html">
+                                <i class="bi bi-image"></i>
+                                图片管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="users.html">
+                                <i class="bi bi-people"></i>
+                                用户管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="logs.html">
+                                <i class="bi bi-journal-text"></i>
+                                系统日志
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="main-content">
+                <div id="alert-container"></div>
+                
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2">仪表盘</h1>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="categories.html" class="text-decoration-none">
+                            <div class="stat-card text-center">
+                                <div class="icon text-primary">
+                                    <i class="bi bi-folder"></i>
+                                </div>
+                                <div class="number" id="total-categories">0</div>
+                                <div class="title">分类总数</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="pictures.html" class="text-decoration-none">
+                            <div class="stat-card text-center">
+                                <div class="icon text-success">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                                <div class="number" id="total-pictures">0</div>
+                                <div class="title">图片总数</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <div class="icon text-info">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="number" id="total-users">0</div>
+                            <div class="title">用户总数</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <div class="icon text-warning">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="number" id="total-completions">0</div>
+                            <div class="title">完成总数</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">快速操作</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-3">
+                                    <button id="dashboard-add-picture-btn" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-plus-circle"></i> 添加新图片
+                                    </button>
+                                    <a href="categories.html" class="btn btn-success btn-lg">
+                                        <i class="bi bi-folder-plus"></i> 添加新分类
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">系统信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>版本：</strong> 1.0.0</p>
+                                <p><strong>最后更新：</strong> <span id="last-update-time">2023-07-01</span></p>
+                                <p><strong>服务器状态：</strong> <span class="badge bg-success">正常</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 图片模态框 -->
+    <div class="modal fade" id="picture-modal" tabindex="-1" aria-labelledby="picture-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="picture-modal-title">添加图片</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="picture-form" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="picture-title" class="form-label">图片标题 (中文)</label>
+                                    <input type="text" class="form-control" id="picture-title" name="title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-title-en" class="form-label">图片标题 (英文)</label>
+                                    <input type="text" class="form-control" id="picture-title-en" name="titleEn">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-description" class="form-label">图片描述</label>
+                                    <textarea class="form-control" id="picture-description" name="description" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-category" class="form-label">分类</label>
+                                    <select class="form-select" id="picture-category" name="category">
+                                        <option value="">无分类</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-difficulty" class="form-label">难度</label>
+                                    <select class="form-select" id="picture-difficulty" name="difficulty">
+                                        <option value="easy">简单</option>
+                                        <option value="medium" selected>中等</option>
+                                        <option value="hard">困难</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-unlock-type" class="form-label">解锁条件</label>
+                                    <select class="form-select" id="picture-unlock-type" name="unlockType">
+                                        <option value="free" selected>免费</option>
+                                        <option value="coins">金币</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="coins-amount-container" style="display: none;">
+                                    <label for="picture-coins" class="form-label">金币数量</label>
+                                    <input type="number" class="form-control" id="picture-coins" name="coins" min="1" value="10">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="picture-status" class="form-label">状态</label>
+                                    <select class="form-select" id="picture-status" name="status">
+                                        <option value="active" selected>启用</option>
+                                        <option value="inactive">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="picture-image" class="form-label">图片文件 (支持PNG/JPG，不超过10MB)</label>
+                                    <input type="file" class="form-control" id="picture-image" name="image" accept="image/png, image/jpeg">
+                                </div>
+                                <div class="mb-3" id="image-preview-container" style="display: none;">
+                                    <label class="form-label">图片预览</label>
+                                    <div class="text-center">
+                                        <img id="image-preview" src="" alt="图片预览" style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary" id="picture-submit-btn" form="picture-form">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html> 
